@@ -97,23 +97,16 @@ You can pass to the ChimeraCat constructor any of the following:
 
 import re
 from pathlib import Path
-from typing import List, Set, Dict
 import networkx as nx
-from dataclasses import dataclass
-from datetime import datetime
 
 from enum import Enum
 from typing import Dict, List, Set, Optional, Pattern
-import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from phart import ASCIIRenderer, LayoutOptions, NodeStyle    
 
-from enum import Enum
-from typing import Dict, List, Set, Optional, Pattern
-import re
-from dataclasses import dataclass, field
-from datetime import datetime
+import argparse
+import sys
 
 ccat_version = "1.0.2"
 class SummaryLevel(Enum):
@@ -185,9 +178,11 @@ class ChimeraCat:
              summary_level: SummaryLevel = SummaryLevel.NONE,
              exclude_patterns: List[str] = None,
              rules: Optional[SummaryRules] = None,
-             debug: bool = False,
              remove_disconnected_deps: bool = False,
+             generate_report: Optional[bool] = None,
+             debug: bool = False,
              debug_str = ""):
+
         self.src_dir = Path(src_dir)
         self.summary_level = summary_level
         self.rules = rules or SummaryRules.default_rules()
@@ -198,6 +193,11 @@ class ChimeraCat:
         self.debug = debug
         self.remove_disconnected_deps = remove_disconnected_deps
         self.debug_str = debug_str
+
+        if generate_report is None:
+            self.generate_report = summary_level in (SummaryLevel.INTERFACE, SummaryLevel.CORE)
+        else:
+            self.generate_report = generate_report
 
     def _debug_print(self, *args, **kwargs):
         """Helper for debug output"""
@@ -254,21 +254,6 @@ class ChimeraCat:
             functions=functions
         )
 
-
-    def _process_imports(self, content: str, module_path: Path) -> str:
-        """Process and adjust imports for concatenated context"""
-        if not isinstance(content, str):
-            raise TypeError(f"Expected string content but got {type(content)}: {content}")
-
-        def replace_relative_import(match: re.Match) -> str:
-            indent = len(match.group()) - len(match.group().lstrip())
-            spaces = ' ' * indent
-            original_line = match.group()
-            return f'{spaces}"""RELATIVE_IMPORT: \n{original_line}\n{spaces}"""'
-        
-        pattern = r'^\s*from\s+\..*$'
-        return re.sub(pattern, replace_relative_import, content, flags=re.MULTILINE)
-
     def _summarize_content(self, content: str) -> str:
         """Apply summary patterns based on current level"""
         if not isinstance(content, str):
@@ -304,7 +289,6 @@ class ChimeraCat:
         
         pattern = r'^\s*from\s+\..*$'
         return re.sub(pattern, replace_relative_import, content, flags=re.MULTILINE)
-
 
     def build_dependency_graph(self):
         """Build a dependency graph with proper relative import resolution"""
@@ -683,32 +667,79 @@ Import Summary:
     {', '.join(sorted(internal_deps))}
     """
     
-def main():
-    debug = True
-    # Example with different summary levels
-    examples = {
-        SummaryLevel.INTERFACE: "signatures_only.py",
-        SummaryLevel.CORE: "essential_code.py",
-        SummaryLevel.NONE: "complete_code.py",
+def get_default_filename(summary_level: SummaryLevel, is_notebook: bool = False) -> str:
+    """Get the default base filename based on output type and summary level"""
+    if is_notebook:
+        return "colab_ready"  # Always full code for notebooks
+        
+    summary_level_names = {
+        SummaryLevel.INTERFACE: "signatures_only",
+        SummaryLevel.CORE: "essential_code",
+        SummaryLevel.NONE: "complete_code"
     }
-    
-    for level, filename in examples.items():
-        cat = ChimeraCat("src", exclude_patterns=["tools\\", ".ipynb", "cats\\"], summary_level=level, debug=debug, debug_str="DBG: ", remove_disconnected_deps=True)
-        output_file = cat.generate_concat_file(filename)
-        print(f"Generated {level.value} version: {output_file}")
-    
-    cat = ChimeraCat("src", exclude_patterns=["tools\\", ".ipynb", "cats\\"], summary_level=SummaryLevel.NONE, debug=debug, debug_str="DBG: ", remove_disconnected_deps=True)
-    output_file = cat.generate_colab_notebook()
-    print(f"Generated colab notebook  version: {output_file}")
+    return summary_level_names[summary_level]
 
-    if debug:
-        cat.visualize_dependencies("module_deps.png")
-        # Get detailed report
-        #report = cat.generate_dependency_ascii()
-        #print(report)
-        report = cat.get_dependency_report()
-        print(report)
-        # Generate visualization
+def process_cli_args(args: Optional[List[str]] = None) -> dict:
+    """Process command line arguments and return a config dict for ChimeraCat"""
+    parser = create_cli_parser()
+    parsed_args = parser.parse_args(args)
+
+    # Convert summary level string to enum
+    summary_level = getattr(SummaryLevel, parsed_args.summary_level.upper())
+
+    # Build config dict
+    config = {
+        'src_dir': parsed_args.src_dir,
+        'summary_level': summary_level,
+        'exclude_patterns': parsed_args.exclude,
+        'remove_disconnected_deps': parsed_args.remove_disconnected,
+        'generate_report': parsed_args.report,
+        'debug': parsed_args.debug,
+        'debug_str': parsed_args.debug_prefix if parsed_args.debug else ""
+    }
+
+    return config, parsed_args
+
+def cli_main(args: Optional[List[str]] = None) -> int:
+    """Main CLI entry point for ChimeraCat"""
+    try:
+        config, args = process_cli_args(args)
+        
+        # Create ChimeraCat instance for Python output (with summarization)
+        cat = ChimeraCat(**config)
+        
+        # Get base filename from argument or generate default
+        base_filename = args.output
+        
+        # Handle output based on type
+        if args.output_type in ('py', 'both'):
+            py_filename = f"{base_filename or get_default_filename(config['summary_level'])}.py"
+            py_file = cat.generate_concat_file(py_filename)
+            print(f"Generated Python file: {py_file}")
+            
+        if args.output_type in ('ipynb', 'both'):
+            # Create new instance with NONE summary level for notebook
+            # Maintain report setting from CLI args
+            notebook_cat = ChimeraCat(
+                **{**config, 'summary_level': SummaryLevel.NONE}
+            )
+            nb_filename = f"{base_filename or get_default_filename(summary_level=SummaryLevel.NONE, is_notebook=True)}.ipynb"
+            nb_file = notebook_cat.generate_colab_notebook(nb_filename)
+            print(f"Generated Jupyter notebook (complete code): {nb_file}")
+            
+        # If debug is enabled, show additional information regardless of report setting
+        if args.debug:
+            print("\nDebug Report:")
+            print(cat.get_dependency_report())
+            
+        return 0
+        
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        return 1
 
 def create_cli_parser() -> argparse.ArgumentParser:
     """Create the command-line argument parser for ChimeraCat"""
@@ -737,7 +768,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
         type=str,
         choices=['interface', 'core', 'none'],
         default='none',
-        help='Code summarization level (default: none)'
+        help='Code summarization level (for .py output only, default: none)'
     )
 
     parser.add_argument(
@@ -750,7 +781,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-o', '--output',
         type=str,
-        help='Output file name (default: based on output type)'
+        help='Output file name (without extension, default: based on output type and summary level)'
     )
 
     parser.add_argument(
@@ -759,6 +790,23 @@ def create_cli_parser() -> argparse.ArgumentParser:
         choices=['py', 'ipynb', 'both'],
         default='both',
         help='Output file type (default: both)'
+    )
+
+    parser.add_argument(
+        '-r', '--report',
+        action='store_true',
+        default=None,
+        help='Generate dependency report and ASCII visualization. By default, reports are '
+            'included for interface/core summary levels and excluded for complete code '
+            'and notebooks. This flag overrides that behavior.'
+    )
+
+    # Add a no-report option for when you want to suppress reports in INTERFACE/CORE
+    parser.add_argument(
+        '--no-report',
+        action='store_false',
+        dest='report',
+        help='Suppress dependency report generation even for interface/core summary levels'
     )
 
     parser.add_argument(
@@ -788,58 +836,41 @@ def create_cli_parser() -> argparse.ArgumentParser:
 
     return parser
 
-def process_cli_args(args: Optional[List[str]] = None) -> dict:
-    """Process command line arguments and return a config dict for ChimeraCat"""
-    parser = create_cli_parser()
-    parsed_args = parser.parse_args(args)
-
-    # Convert summary level string to enum
-    summary_level = getattr(SummaryLevel, parsed_args.summary_level.upper())
-
-    # Build config dict
-    config = {
-        'src_dir': parsed_args.src_dir,
-        'summary_level': summary_level,
-        'exclude_patterns': parsed_args.exclude,
-        'remove_disconnected_deps': parsed_args.remove_disconnected,
-        'debug': parsed_args.debug,
-        'debug_str': parsed_args.debug_prefix if parsed_args.debug else ""
-    }
-
-    return config, parsed_args
-
-def cli_main(args: Optional[List[str]] = None) -> int:
-    """Main CLI entry point for ChimeraCat"""
-    try:
-        config, args = process_cli_args(args)
-        
-        # Create ChimeraCat instance
-        cat = ChimeraCat(**config)
-        
-        # Handle output based on type
-        if args.output_type in ('py', 'both'):
-            py_output = args.output if args.output and args.output_type == 'py' else 'colab_combined.py'
-            py_file = cat.generate_concat_file(py_output)
-            print(f"Generated Python file: {py_file}")
-            
-        if args.output_type in ('ipynb', 'both'):
-            nb_output = args.output if args.output and args.output_type == 'ipynb' else 'colab_combined.ipynb'
-            nb_file = cat.generate_colab_notebook(nb_output)
-            print(f"Generated Jupyter notebook: {nb_file}")
-            
-        # If debug is enabled, show additional information
-        if args.debug:
-            print("\nDependency Report:")
-            print(cat.get_dependency_report())
-            
-        return 0
-        
-    except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
-        if args.debug:
-            import traceback
-            traceback.print_exc()
-        return 1
 
 if __name__ == "__main__":
-    sys.exit(cli_main())
+    debug = True
+    generate_report = True
+    # Example with different summary levels for Python output
+    examples = {
+        SummaryLevel.INTERFACE: "signatures_only.py",
+        SummaryLevel.CORE: "essential_code.py",
+        SummaryLevel.NONE: "complete_code.py",
+    }
+    
+    for level, filename in examples.items():
+        cat = ChimeraCat(
+            "src", 
+            exclude_patterns=["tools\\", ".ipynb", "cats\\"], 
+            summary_level=level, 
+            debug=debug, 
+            debug_str="DBG: ", 
+            remove_disconnected_deps=True,
+            generate_report=generate_report
+        )
+        output_file = cat.generate_concat_file(filename)
+        print(f"Generated {level.value} version: {output_file}")
+    
+    # Generate notebook with complete code
+    cat = ChimeraCat(
+        "src", 
+        exclude_patterns=["tools\\", ".ipynb", "cats\\"], 
+        remove_disconnected_deps=True,
+    )
+    output_file = cat.generate_colab_notebook("colab_ready.ipynb")
+    print(f"Generated notebook version: {output_file}")
+
+    if debug:
+        cat.visualize_dependencies("module_deps.png")
+        if generate_report:
+            report = cat.get_dependency_report()
+            print(report)
