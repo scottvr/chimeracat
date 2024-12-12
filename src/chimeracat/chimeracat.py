@@ -7,8 +7,9 @@
 #   exclusions
 #   other patterns
 
-ChimeraCat arose as an ancillary utility for some larger work I was 
-doing with the help of Claude 3.5 Sonnet (New) in October 2024 
+ChimeraCat emerged as an ancillary utility for some larger work I was 
+doing with the help of Claude 3.5 Sonnet (New) in October 2024.
+It has grown and evolved quite a bit in the short time since it was born.
 
 This utility:
 
@@ -18,6 +19,8 @@ Generates both a single .py file and a Colab notebook
 Handles internal vs external imports
 Avoids duplicate definitions
 Creates a clean, organized output
+
+QuickStart:
 
 ```python
 from ChimeraCat import ChimeraCat
@@ -34,6 +37,62 @@ Features Claude is particularly proud of:
 - Clean handling of internal vs external imports
 - Automatic notebook generation
 - Maintains code readability with section headers
+
+Advanced Usage:
+
+You can pass to the ChimeraCat constructor any of the following:
+
+    src_dir: str = "src",  
+
+# defaults to a "./src" directory in the cwd. 
+# this is how you'd override that.
+
+    summary_level: SummaryLevel = SummaryLevel.NONE, 
+
+# how hard, if at all, do you want ccat to try 
+# to strip the code it finds down to its essentials? 
+# valid options are explicit in the SmarryLevel enum.
+
+    exclude_patterns: List[str] = None, 
+
+# this is a list of strings that each file in the 
+# src_dir directory will be checked against; 
+# if there is a full or partial match, the file will 
+# not be scanned. ccat will not scan itself, 
+# (that is, the currently executing script filename)
+# owing to its origins residing in a tools/ directory 
+# of a larger project and tending to clutter up 
+# the summary cats.
+
+    rules: Optional[SummaryRules] = None, 
+
+# you can construct a SummaryRules class instance 
+# and pass it here if you want to expand on ccat's 
+# basic functionality. For applications in a specific 
+# domain for example, perhaps you want to remove a 
+# rule from the defaults, or there is code that would 
+# be considered boilerplate in this domain, but ccat 
+# might think it looks interesting. Override the builtins here.
+
+    remove_disconnected_deps: bool = False, 
+
+# if the app has many imports, but the dependency graph 
+# finds to relations between them, by default they are 
+# visualized as disconnected nodes. To save space, you 
+# may want to omit them from ccat's output by setting 
+# this True
+
+    debug: bool = False, 
+
+# if this is False, _debug_print() messages are elided
+
+    debug_str = "" 
+
+# if debug is True, if debug_str is set, messages printed 
+# will be prefaced with this string to aid in eyeballing 
+# or grepping program stdout/stderr output.
+
+
 """
 
 import re
@@ -148,11 +207,17 @@ class ChimeraCat:
     def should_exclude(self, file_path: Path) -> bool:
         """Check if a file should be excluded from processing"""
         # Always exclude self
+        self._debug_print(file_path.resolve(), self.self_path)
         if file_path.resolve() == self.self_path:
+            if self.debug:
+                self._debug_print(f"excluding self {self.self_path}")
             return True
             
         # Check against exclude patterns
         str_path = str(file_path)
+        self._debug_print("str_path",str_path)
+        for pattern in self.exclude_patterns:
+            self._debug_print("comparing", pattern, str_path)
         return any(pattern in str_path for pattern in self.exclude_patterns)
 
     def analyze_file(self, file_path: Path) -> Optional[ModuleInfo]:
@@ -550,10 +615,10 @@ Summary Level: {self.summary_level.value}
             display_graph.add_edge(src_label, dst_label)
         
         if self.remove_disconnected_deps:
-            print("removing disconnected imports (no dependent relationship)")
-            print(display_graph)
+            self._debug_print("removing disconnected imports (no dependent relationship)")
+            self._debug_print(display_graph)
             display_graph.remove_nodes_from(list(nx.isolates(display_graph)))
-            print(display_graph)
+            self._debug_print(display_graph)
 
         options = LayoutOptions(
             node_style=NodeStyle.MINIMAL,
@@ -575,7 +640,7 @@ Directory Structure:
 Module Dependencies:
 
 {legend}
-{"non-dependent modules elided" if self.remove_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
+{"non-dependent modules elided from visualization" if self.remove_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
 {renderer.render()}
      
 Import Summary:
@@ -628,11 +693,11 @@ def main():
     }
     
     for level, filename in examples.items():
-        cat = ChimeraCat("src", exclude_patterns=["tools/", "*.ipynb", "cats/"], summary_level=level, debug=debug)
+        cat = ChimeraCat("src", exclude_patterns=["tools\\", ".ipynb", "cats\\"], summary_level=level, debug=debug, debug_str="DBG: ", remove_disconnected_deps=True)
         output_file = cat.generate_concat_file(filename)
         print(f"Generated {level.value} version: {output_file}")
     
-    cat = ChimeraCat("src", exclude_patterns=["tools/", "*.ipynb", "cats/"], summary_level=SummaryLevel.NONE, debug=debug)
+    cat = ChimeraCat("src", exclude_patterns=["tools\\", ".ipynb", "cats\\"], summary_level=SummaryLevel.NONE, debug=debug, debug_str="DBG: ", remove_disconnected_deps=True)
     output_file = cat.generate_colab_notebook()
     print(f"Generated colab notebook  version: {output_file}")
 
