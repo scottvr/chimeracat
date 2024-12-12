@@ -710,6 +710,136 @@ def main():
         print(report)
         # Generate visualization
 
+def create_cli_parser() -> argparse.ArgumentParser:
+    """Create the command-line argument parser for ChimeraCat"""
+    parser = argparse.ArgumentParser(
+        prog='ccat',
+        description="""
+    ChimeraCat (ccat) - The smart code concatenator
+     /\\___/\\   
+    ( o   o )  Intelligently combines Python source files
+    (  =^=  )  while maintaining dependencies and readability
+     (______)  
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument(
+        'src_dir',
+        type=str,
+        nargs='?',
+        default='src',
+        help='Source directory containing Python files (default: src)'
+    )
+
+    parser.add_argument(
+        '-s', '--summary-level',
+        type=str,
+        choices=['interface', 'core', 'none'],
+        default='none',
+        help='Code summarization level (default: none)'
+    )
+
+    parser.add_argument(
+        '-e', '--exclude',
+        type=str,
+        nargs='+',
+        help='Patterns to exclude from processing (e.g., "test" "temp")'
+    )
+
+    parser.add_argument(
+        '-o', '--output',
+        type=str,
+        help='Output file name (default: based on output type)'
+    )
+
+    parser.add_argument(
+        '-t', '--output-type',
+        type=str,
+        choices=['py', 'ipynb', 'both'],
+        default='both',
+        help='Output file type (default: both)'
+    )
+
+    parser.add_argument(
+        '--remove-disconnected',
+        action='store_true',
+        help='Remove modules with no dependencies from visualization'
+    )
+
+    parser.add_argument(
+        '-d', '--debug',
+        action='store_true',
+        help='Enable debug output'
+    )
+
+    parser.add_argument(
+        '--debug-prefix',
+        type=str,
+        default='CCAT:',
+        help='Prefix for debug messages (default: CCAT:)'
+    )
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'%(prog)s {ccat_version}'
+    )
+
+    return parser
+
+def process_cli_args(args: Optional[List[str]] = None) -> dict:
+    """Process command line arguments and return a config dict for ChimeraCat"""
+    parser = create_cli_parser()
+    parsed_args = parser.parse_args(args)
+
+    # Convert summary level string to enum
+    summary_level = getattr(SummaryLevel, parsed_args.summary_level.upper())
+
+    # Build config dict
+    config = {
+        'src_dir': parsed_args.src_dir,
+        'summary_level': summary_level,
+        'exclude_patterns': parsed_args.exclude,
+        'remove_disconnected_deps': parsed_args.remove_disconnected,
+        'debug': parsed_args.debug,
+        'debug_str': parsed_args.debug_prefix if parsed_args.debug else ""
+    }
+
+    return config, parsed_args
+
+def cli_main(args: Optional[List[str]] = None) -> int:
+    """Main CLI entry point for ChimeraCat"""
+    try:
+        config, args = process_cli_args(args)
+        
+        # Create ChimeraCat instance
+        cat = ChimeraCat(**config)
+        
+        # Handle output based on type
+        if args.output_type in ('py', 'both'):
+            py_output = args.output if args.output and args.output_type == 'py' else 'colab_combined.py'
+            py_file = cat.generate_concat_file(py_output)
+            print(f"Generated Python file: {py_file}")
+            
+        if args.output_type in ('ipynb', 'both'):
+            nb_output = args.output if args.output and args.output_type == 'ipynb' else 'colab_combined.ipynb'
+            nb_file = cat.generate_colab_notebook(nb_output)
+            print(f"Generated Jupyter notebook: {nb_file}")
+            
+        # If debug is enabled, show additional information
+        if args.debug:
+            print("\nDependency Report:")
+            print(cat.get_dependency_report())
+            
+        return 0
+        
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(cli_main())
