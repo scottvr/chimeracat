@@ -575,7 +575,7 @@ Directory Structure:
 Module Dependencies:
 
 {legend}
-{"non-dependendt modules elided" if self.remove_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
+{"non-dependent modules elided" if self.remove_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
 {renderer.render()}
      
 Import Summary:
