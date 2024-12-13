@@ -19,7 +19,26 @@ ChimeraCat (ccat for short):
 
 ### How to use it
 
-QuickStart:
+# CLI Usage:
+
+If installed via pip, a script in your venv's bin (or .exe in Scripts under Windows) will be generated allowing you to call chimeracat from the command-line as "ccat"
+
+Example usage:
+```bash
+# Basic usage
+ccat src/
+
+# Generate only Python file with interface-level summary
+ccat src/ -s interface -t py
+
+# Generate notebook with debugging
+ccat src/ -t ipynb -d
+
+# Exclude patterns and specify output
+ccat src/ -e "test" "temp" -o combined_output.py
+```
+
+## dev QuickStart:
 
 ```python
 from ChimeraCat import ChimeraCat
@@ -30,7 +49,7 @@ notebook_file = concat.generate_colab_notebook()
 py_file = concat.generate_concat_file()
 ```
 
-### Features Claude is particularly proud of:
+## Features Claude is particularly proud of:
 
 - Dependency ordering using NetworkX
 - Duplicate prevention
@@ -38,7 +57,7 @@ py_file = concat.generate_concat_file()
 - Automatic notebook generation
 - Maintains code readability with section headers
 
-### Advanced Usage:
+### Additional Developer Info
 
 You can pass to the ChimeraCat constructor any of the following:
 
@@ -64,49 +83,41 @@ You can pass to the ChimeraCat constructor any of the following:
       of a larger project and tending to clutter up 
       the summary cats.
 
-**rules: Optional[SummaryRules] = None**
+   **rules: Optional[SummaryRules] = None**
 
-    you can construct a SummaryRules class instance 
-    and pass it here if you want to expand on ccat's 
-    basic functionality. For applications in a specific 
-    domain for example, perhaps you want to remove a 
-    rule from the defaults, or there is code that would 
-    be considered boilerplate in this domain, but ccat 
-    might think it looks interesting. Override the builtins here. 
+      you can construct a SummaryRules class instance 
+      and pass it here if you want to expand on ccat's 
+      basic functionality. For applications in a specific 
+      domain for example, perhaps you want to remove a 
+      rule from the defaults, or there is code that would 
+      be considered boilerplate in this domain, but ccat 
+      might think it looks interesting. Override the builtins here. 
 
-**remove_disconnected_deps: bool = False**
+   **remove_disconnected_deps: bool = False**
 
-    if the app has many imports, but the dependency graph 
-    finds to relations between them, by default they are 
-    visualized as disconnected nodes. To save space, you 
-    may want to omit them from ccat's output by setting 
-    this True
+      if the app has many imports, but the dependency graph 
+      finds to relations between them, by default they are 
+      visualized as disconnected nodes. To save space, you 
+      may want to omit them from ccat's output by setting 
+      this True
+ 
+   **generate_report**
 
-**debug: bool = False**
+      ChimeraCat tries to take care of this sensibly for you,
+      by not cluttering a notebook with report info, but if you
+      are using summarization, it includes the report info, 
+      assuming your use case is to feed as meaningful code using 
+      as little context and as few tokens as possible. But, if you
+      are some sort of madman, you can override this behavior
 
-    if this is False, _debug_print() messages are elided
+   **debug: bool = False**
 
-**debug_str = ""**
+      if this is False, _debug_print() messages are elided
 
-   if debug is True, if debug_str is set, messages printed 
-   will be prefaced with this string to aid in eyeballing 
-   or grepping program stdout/stderr output.
+   **debug_str = ""**
 
-### CLI Usage:
+      if debug is True, if debug_str is set, messages printed 
+      will be prefaced with this string to aid in eyeballing 
+      or grepping program stdout/stderr output.
 
-If installed via pip, a script in your venv's bin (or .exe in Scripts under Windows) will be generated allowing you to call chimeracat from the command-line as "ccat"
-
-Example usage:
-```bash
-# Basic usage
-ccat src/
-
-# Generate only Python file with interface-level summary
-ccat src/ -s interface -t py
-
-# Generate notebook with debugging
-ccat src/ -t ipynb -d
-
-# Exclude patterns and specify output
-ccat src/ -e "test" "temp" -o combined_output.py
-```
+### TBD
