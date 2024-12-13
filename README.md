@@ -1,5 +1,5 @@
 # ccat
-ccat - ChimeraCat smart code concatenator
+ChimeraCat - summarizing code concatenator
 ----------------------------------
 
 ### What is it?
