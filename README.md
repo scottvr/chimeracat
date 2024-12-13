@@ -91,3 +91,22 @@ You can pass to the ChimeraCat constructor any of the following:
    if debug is True, if debug_str is set, messages printed 
    will be prefaced with this string to aid in eyeballing 
    or grepping program stdout/stderr output.
+
+### CLI Usage:
+
+If installed via pip, a script in your venv's bin (or .exe in Scripts under Windows) will be generated allowing you to call chimeracat from the command-line as "ccat"
+
+Example usage:
+```bash
+# Basic usage
+ccat src/
+
+# Generate only Python file with interface-level summary
+ccat src/ -s interface -t py
+
+# Generate notebook with debugging
+ccat src/ -t ipynb -d
+
+# Exclude patterns and specify output
+ccat src/ -e "test" "temp" -o combined_output.py
+```
