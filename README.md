@@ -48,7 +48,7 @@ ccat src/ -e "test" "temp" -o combined_output.py
 ## dev QuickStart:
 
 ```python
-from ChimeraCat import ChimeraCat
+from chimeracat import ChimeraCat
 
 # Generate both notebook and Python file
 concat = ChimeraCat("src")
