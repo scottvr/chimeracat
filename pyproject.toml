@@ -19,5 +19,5 @@ dependencies = [
 [project.scripts]
 ccat = "chimeracat:cli_main"
 
-[tool.setuptools.packages.find]
-where = ["chimeracat"]
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
