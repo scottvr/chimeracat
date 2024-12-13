@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ccat"
+name = "ChimeraCat"
 version = "0.2.1"
 description = "ChimeraCat (ccat) - The smart code concatenator"
 readme = "README.md"
