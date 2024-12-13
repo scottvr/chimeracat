@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ccat = "chimeracat:cli_main"
+ccat = "chimeracat.chimeracat:cli_main"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
+[tool.hatch.build]
+packages = ["src/chimeracat"]
