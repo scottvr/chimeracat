@@ -6,6 +6,8 @@ ccat - ChimeraCat smart code concatenator
 ChimeraCat emerged as an ancillary utility for some larger work I was 
 doing with the help of Claude 3.5 Sonnet (New) in October 2024.
 Initially a quick and dirty code concatenator to output ipynb files from multiple py files, it has grown and evolved quite a bit in the short time since it was born.
+
+
 It now serves the original purpose of concatenation, but it does so after analysing the files to determine the best order and remove duplicates and looping conditions, but in addition it can strip boilerplate code and make other intelligent choices about what to share, since It gave birth to offspring too: (PHART)[https://github.com/scottvr/PHART]
 
 ChimeraCat (ccat for short):
