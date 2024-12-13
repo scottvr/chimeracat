@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ChimeraCat"
+name = "chimeracat"
 version = "0.2.1"
 description = "ChimeraCat (ccat) - The smart code concatenator"
 readme = "README.md"
@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ccat = "chimeracat:cli_main"
+ccat = "ChimeraCat:cli_main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
