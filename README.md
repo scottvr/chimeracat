@@ -12,6 +12,7 @@ It now serves the original purpose of concatenation, but it does so after analys
 
 ChimeraCat (ccat for short):
 
+- Facilitates summarizing larger projects for the purpose of providing code to an LLM, sharing  as much information using as few tokens and sparing as much context memory as possible
 - Analyzes Python files for imports and definitions
 - Builds a dependency graph
 - Generates both a single .py file and a Colab notebook
