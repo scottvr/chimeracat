@@ -1,12 +1,4 @@
 """
-### TODO:
-# cli
-#   srcdir args
-#   summarization level
-#   colab
-#   exclusions
-#   other patterns
-
 ChimeraCat emerged as an ancillary utility for some larger work I was 
 doing with the help of Claude 3.5 Sonnet (New) in October 2024.
 It has grown and evolved quite a bit in the short time since it was born.
@@ -91,10 +83,7 @@ You can pass to the ChimeraCat constructor any of the following:
 # if debug is True, if debug_str is set, messages printed 
 # will be prefaced with this string to aid in eyeballing 
 # or grepping program stdout/stderr output.
-
-
 """
-
 import re
 from pathlib import Path
 import networkx as nx
@@ -108,7 +97,7 @@ from phart import ASCIIRenderer, LayoutOptions, NodeStyle
 import argparse
 import sys
 
-ccat_version = "1.0.2"
+ccat_version = "1.1.0"
 class SummaryLevel(Enum):
     INTERFACE = "interface"     # Just interfaces/types/docstrings
     CORE = "core"              # + Core logic, skip standard patterns
@@ -421,28 +410,18 @@ Summary Level: {self.summary_level.value}
         """Get files sorted by dependencies"""
         try:
             # Topological sort ensures dependencies come before dependents
-            sorted_files = list(nx.topological_sort(self.dep_graph))
-            
-            # Debug info
-            print("\nDependency Resolution:")
-            for idx, file in enumerate(sorted_files):
-                deps = list(self.dep_graph.predecessors(file))
-                print(f"{idx+1}. {file.name}")
-                if deps:
-                    print(f"   Depends on: {', '.join(d.name for d in deps)}")
-            
-            return sorted_files
+            return list(nx.topological_sort(self.dep_graph))
 
         except nx.NetworkXUnfeasible as e:
             # If we detect a cycle, identify and report it
             cycles = list(nx.simple_cycles(self.dep_graph))
-            print("Warning: Circular dependencies detected:")
+            self._debug_print("Warning: Circular dependencies detected:")
             for cycle in cycles:
                 cycle_path = ' -> '.join(p.name for p in cycle)
-                print(f"  {cycle_path}")
+                self._debug_print(f"  {cycle_path}")
             
             # Fall back to simple ordering but warn user
-            print("Using simple ordering instead.")
+            self._debug_print("Using simple ordering instead.")
             return list(self.modules.keys())
 
     def visualize_dependencies(self, output_file: str = "dependencies.png"):
@@ -711,7 +690,6 @@ def cli_main(args: Optional[List[str]] = None) -> int:
         # Get base filename from argument or generate default
         base_filename = args.output
         
-        # Handle output based on type
         if args.output_type in ('py', 'both'):
             py_filename = f"{base_filename or get_default_filename(config['summary_level'])}.py"
             py_file = cat.generate_concat_file(py_filename)
@@ -719,14 +697,20 @@ def cli_main(args: Optional[List[str]] = None) -> int:
             
         if args.output_type in ('ipynb', 'both'):
             # Create new instance with NONE summary level for notebook
-            # Maintain report setting from CLI args
             notebook_cat = ChimeraCat(
-                **{**config, 'summary_level': SummaryLevel.NONE}
+                src_dir=config['src_dir'],
+                exclude_patterns=config['exclude_patterns'],
+                remove_disconnected_deps=config['remove_disconnected_deps'],
+                debug=config['debug'],
+                debug_str=config['debug_str'],
+                generate_report=config['generate_report'],
+                summary_level=SummaryLevel.NONE
             )
+        
             nb_filename = f"{base_filename or get_default_filename(summary_level=SummaryLevel.NONE, is_notebook=True)}.ipynb"
             nb_file = notebook_cat.generate_colab_notebook(nb_filename)
             print(f"Generated Jupyter notebook (complete code): {nb_file}")
-            
+
         # If debug is enabled, show additional information regardless of report setting
         if args.debug:
             print("\nDebug Report:")
