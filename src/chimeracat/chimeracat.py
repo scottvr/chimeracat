@@ -97,7 +97,7 @@ from phart import ASCIIRenderer, LayoutOptions, NodeStyle
 import argparse
 import sys
 
-ccat_version = "1.1.0"
+ccat_version = "0.2.1"
 class SummaryLevel(Enum):
     INTERFACE = "interface"     # Just interfaces/types/docstrings
     CORE = "core"              # + Core logic, skip standard patterns
