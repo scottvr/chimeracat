@@ -12,7 +12,7 @@ It now serves the original purpose of concatenation, and another use case that n
 
 It does so by analysing the files to determine the best order to concatenate them in, and to eliminated duplicates and perpetual recursive import loops. In addition it can strip boilerplate code and make other intelligent choices about what to leave out, and the heuristics are fully user defineable via custom configuration, also done in Python. 
 
-Incidentally, ChimeraCat's reporting on the dependency graph it creates (using NetworkX) gave rise to the need for a text-based diagrammer for NetworkX Graphs (and GraphViz DOT or GraphML files to boot!), resulting in the birth of  the Python Heirarchical ASCII Rendering Tool. (PHART)[https://github.com/scottvr/PHART]
+Incidentally, ChimeraCat's reporting on the dependency graph it creates (using NetworkX) gave rise to the need for a text-based diagrammer for NetworkX Graphs (and GraphViz DOT or GraphML files to boot!), resulting in the birth of  the Python Heirarchical ASCII Rendering Tool. [PHART](https://github.com/scottvr/PHART)
 
 ChimeraCat (ccat for short):
 
