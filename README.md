@@ -10,7 +10,7 @@ Initially a quick and dirty code concatenator to output ipynb files from multipl
 
 It now serves the original purpose of concatenation, and another use case that naturally evolved from collaborating with an LLM, that of summarizing to reduce (in some cases drastically) the size of the file, while aiming to retain as much relevant information as possible.  
 
-It does so by analysing the files to determine the best order to concatenate them in, and to eliminated duplicates and perpetual recursive import loops. In addition it can strip boilerplate code and make other intelligent choices about what to leave out, and the heuristics are fully user defineable via custom configuration, also done in Python. 
+It does so by analysing the files to determine the best order to concatenate them in, and to eliminate duplicates and perpetual recursive import loops. In addition it can strip boilerplate code and make other intelligent choices about what to leave out, and the heuristics are fully user defineable via custom configuration, also done in Python. 
 
 Incidentally, ChimeraCat's reporting on the dependency graph it creates (using NetworkX) gave rise to the need for a text-based diagrammer for NetworkX Graphs (and GraphViz DOT or GraphML files to boot!), resulting in the birth of  the Python Heirarchical ASCII Rendering Tool. [PHART](https://github.com/scottvr/PHART)
 
