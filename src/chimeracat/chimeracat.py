@@ -1,89 +1,65 @@
+"""ChimeraCat: Intelligent code concatenator and summarizer for LLM analysis.
+
+Analyzes Python codebases to generate consolidated files optimized for LLM processing,
+with configurable summarization to reduce token usage while preserving key information.
+
+Args:
+    src_dir (str): Source directory containing Python files (default: "src")
+    summary_level (SummaryLevel): Summarization level (INTERFACE/CORE/NONE)
+    exclude_patterns (List[str]): Patterns to exclude from processing
+    rules (Optional[SummaryRules]): Custom summarization rules
+    remove_disconnected_deps (bool): Omit disconnected modules from visualization
+    generate_report (Optional[bool]): Include dependency analysis report
+    report_only (bool): Generate only the dependency report
+    use_numeric (bool): Use numeric instead of alpha labels in visualizations
+    debug (bool): Enable debug output
+    debug_str (str): Prefix for debug messages
+
+Key Features:
+    - Analyzes Python files for imports and definitions
+    - Builds dependency graphs using NetworkX
+    - Generates both .py files and Colab notebooks
+    - Smart handling of internal/external imports
+    - Configurable code summarization
+
+Configuration Details:
+    src_dir: Source directory to analyze. Defaults to "./src" in cwd.
+    
+    summary_level: Controls summarization aggressiveness:
+        - NONE: Full code output
+        - INTERFACE: Preserve signatures/types/docstrings only
+        - CORE: Include core logic, skip standard patterns
+    
+    exclude_patterns: Files matching these patterns are skipped.
+        Note: ChimeraCat always excludes itself to avoid recursion.
+    
+    rules: Override default summarization rules with custom SummaryRules.
+        Useful for domain-specific boilerplate detection.
+    
+    remove_disconnected_deps: When True, omit modules with no dependencies
+        from visualization. Useful for cleaner dependency graphs.
+    
+    generate_report: Controls inclusion of dependency analysis.
+        Defaults to True for INTERFACE/CORE summaries.
+    
+    report_only: Generate only dependency report without code output.
+    
+    use_numeric: Use numbers instead of letters for node labels.
+
+Example:
+    ```python
+    # Generate both notebook and summarized Python file
+    cat = ChimeraCat(
+        "src",
+        summary_level=SummaryLevel.INTERFACE,
+        exclude_patterns=["tests"],
+        remove_disconnected_deps=True
+    )
+    notebook = cat.generate_colab_notebook()
+    py_file = cat.generate_concat_file()
+    ```
 """
-ChimeraCat emerged as an ancillary utility for some larger work I was 
-doing with the help of Claude 3.5 Sonnet (New) in October 2024.
-It has grown and evolved quite a bit in the short time since it was born.
 
-This utility:
-
-Analyzes Python files for imports and definitions
-Builds a dependency graph
-Generates both a single .py file and a Colab notebook
-Handles internal vs external imports
-Avoids duplicate definitions
-Creates a clean, organized output
-
-QuickStart:
-
-```python
-from ChimeraCat import ChimeraCat
-
-# Generate both notebook and Python file
-concat = ChimeraCat("src")
-notebook_file = concat.generate_colab_notebook()
-py_file = concat.generate_concat_file()
-```
-
-Features Claude is particularly proud of:
-- Dependency ordering using NetworkX
-- Duplicate prevention
-- Clean handling of internal vs external imports
-- Automatic notebook generation
-- Maintains code readability with section headers
-
-Advanced Usage:
-
-You can pass to the ChimeraCat constructor any of the following:
-
-    src_dir: str = "src",  
-
-# defaults to a "./src" directory in the cwd. 
-# this is how you'd override that.
-
-    summary_level: SummaryLevel = SummaryLevel.NONE, 
-
-# how hard, if at all, do you want ccat to try 
-# to strip the code it finds down to its essentials? 
-# valid options are explicit in the SmarryLevel enum.
-
-    exclude_patterns: List[str] = None, 
-
-# this is a list of strings that each file in the 
-# src_dir directory will be checked against; 
-# if there is a full or partial match, the file will 
-# not be scanned. ccat will not scan itself, 
-# (that is, the currently executing script filename)
-# owing to its origins residing in a tools/ directory 
-# of a larger project and tending to clutter up 
-# the summary cats.
-
-    rules: Optional[SummaryRules] = None, 
-
-# you can construct a SummaryRules class instance 
-# and pass it here if you want to expand on ccat's 
-# basic functionality. For applications in a specific 
-# domain for example, perhaps you want to remove a 
-# rule from the defaults, or there is code that would 
-# be considered boilerplate in this domain, but ccat 
-# might think it looks interesting. Override the builtins here.
-
-    remove_disconnected_deps: bool = False, 
-
-# if the app has many imports, but the dependency graph 
-# finds to relations between them, by default they are 
-# visualized as disconnected nodes. To save space, you 
-# may want to omit them from ccat's output by setting 
-# this True
-
-    debug: bool = False, 
-
-# if this is False, _debug_print() messages are elided
-
-    debug_str = "" 
-
-# if debug is True, if debug_str is set, messages printed 
-# will be prefaced with this string to aid in eyeballing 
-# or grepping program stdout/stderr output.
-"""
 import re
 from pathlib import Path
 import networkx as nx
@@ -93,6 +69,7 @@ from typing import Dict, List, Set, Optional, Pattern
 from dataclasses import dataclass, field
 from datetime import datetime
 from phart import ASCIIRenderer, LayoutOptions, NodeStyle    
+from . import __version__
 
 import argparse
 import sys
@@ -169,12 +146,14 @@ class ChimeraCat:
              remove_disconnected_deps: bool = False,
              generate_report: Optional[bool] = None,
              report_only: bool = False,
+             use_numeric: bool = False,
              debug: bool = False,
              debug_str = ""):
 
         self.src_dir = Path(src_dir)
         self.summary_level = summary_level
         self.report_only = report_only
+        self.use_numeric = use_numeric
         self.rules = rules or SummaryRules.default_rules()
         self.modules: Dict[Path, ModuleInfo] = {}
         self.dep_graph = nx.DiGraph()
@@ -558,11 +537,7 @@ Summary Level: {self.summary_level.value}
 
         def get_short_label(index):
             """Generate a short label (e.g., A, B, ..., AA, AB)."""
-            label = ""
-            while index >= 0:
-                label = chr(65 + index % 26) + label
-                index = index // 26 - 1
-            return label
+            return str(index + 1) if self.use_numeric else ''.join(chr(65 + i) for i in divmod(index, 26)[1::-1] or [index % 26])
 
         # Add nodes and edges with relative path names
         for node in self.dep_graph.nodes():
@@ -674,6 +649,7 @@ def process_cli_args(args: Optional[List[str]] = None) -> dict:
         'remove_disconnected_deps': parsed_args.remove_disconnected,
         'generate_report': parsed_args.report,
         'report_only': parsed_args.report_only,
+        'use_numeric': parsed_args.use_numeric,
         'debug': parsed_args.debug,
         'debug_str': parsed_args.debug_prefix if parsed_args.debug else ""
     }
@@ -688,7 +664,11 @@ def cli_main(args: Optional[List[str]] = None) -> int:
         # Create ChimeraCat instance for Python output (with summarization)
         cat = ChimeraCat(**config)
         
-        if not args.report_only:
+        if args.report_only:
+            cat.build_dependency_graph() 
+            print(cat.get_dependency_report())
+
+        else:
             # Get base filename from argument or generate default
             base_filename = args.output
             
@@ -714,7 +694,7 @@ def cli_main(args: Optional[List[str]] = None) -> int:
                 print(f"Generated Jupyter notebook (complete code): {nb_file}")
 
         # If debug is enabled, show additional information regardless of report setting
-        if args.debug or args.report_only:
+        if args.debug or args.report:
             print(cat.get_dependency_report())
         
         return 0
@@ -728,7 +708,6 @@ def cli_main(args: Optional[List[str]] = None) -> int:
 
 def create_cli_parser() -> argparse.ArgumentParser:
     """Create the command-line argument parser for ChimeraCat"""
-    from . import __version__
     parser = argparse.ArgumentParser(
         prog='ccat',
         description="""
@@ -793,6 +772,9 @@ def create_cli_parser() -> argparse.ArgumentParser:
         dest='report_only',
         help='Suppress code summarization or notebook cocatenization' 
     )
+    
+    parser.add_argument('--numeric-labels', action='store_true', dest="use_numeric", help='Use numbers instead of letters for node labels')
+    
     # Add a no-report option for when you want to suppress reports in INTERFACE/CORE
     parser.add_argument(
         '--no-report',
