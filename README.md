@@ -1,9 +1,12 @@
-# ChimeraCat: Intelligent code concatenator and summarizer
+# ChimeraCat: 
+Intelligent code concatenator and summarizer
 
+----
+## What does it do?
 Analyzes Python codebases to generate consolidated files optimized for LLM processing,
 with configurable summarization to reduce token usage while preserving key information.
 
-Now includes cli `ccat` with all configuration exposed as command-line arguments.
+Now includes cli `ccat` with all configuration exposed as command-line arguments, so it's ready to use without any development on your part. Just `pip install git+https://github.com/scottvr/chimeracat` into your venv.
 
 ## Key Features:
 - Analyzes Python files for imports and definitions
