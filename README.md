@@ -4,7 +4,7 @@ Intelligent code concatenator and summarizer
 ----
 ## What does it do?
 Analyzes Python codebases to generate consolidated files optimized for LLM processing,
-with configurable summarization to reduce token usage while preserving key information in the code. It was originally to smartly concatenate multiple files from a python lib in development into a single notebook for testing in Colab, then I realized its fitness to the sharing code with an LLM purpose. 
+with configurable summarization to reduce token usage while preserving key information in the code. It was originally to smartly concatenate multiple files from a python lib in development into a single notebook for testing in Colab, then I realized its fitness to the sharing-code-with-an-LLM purpose. 
 
 Now includes cli `ccat` with all configuration exposed as command-line arguments, so it's ready to use without any development on your part. Just `pip install git+https://github.com/scottvr/chimeracat` into your venv.
 
