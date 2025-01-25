@@ -423,46 +423,88 @@ Summary Level: {self.summary_level.value}
             return None
 
     def get_dependency_report(self) -> str:
-        """Generate a detailed dependency report"""
-        report = ["Dependency Analysis Report", "=" * 25, ""]
-        report.append(self.generate_dependency_ascii()) 
-        # Module statistics
-        report.extend([
+        """Generate a detailed dependency report organized in logical sections.
+        
+        Returns a string containing sections in this order:
+        1. Header
+        2. Directory Structure
+        3. Import Summary
+        4. Module Statistics
+        5. PHART Visualization with Legend
+        6. Dependency Chains
+        7. Module Details
+        """
+        # Header section - introduces the report
+        header = ["Dependency Analysis Report", "=" * 25, ""]
+        
+        # Directory tree section - shows file organization
+        directory_structure = [
+            "Directory Structure:",
+            self._get_tree_output(),
+            ""
+        ]
+        
+        # Import summary section - external and internal dependencies
+        import_summary = [
+            "Import Summary:",
+            self._generate_import_summary(),
+            ""
+        ]
+        
+        # Module statistics and graph header
+        statistics = [
             "Module Statistics:",
             f"Total modules: {len(self.modules)}",
             f"Total dependencies: {self.dep_graph.number_of_edges()}",
+            "",
+            "Module Dependencies:",
+            "-------------------",
             ""
-        ])
+        ]
         
-        # Dependency chains
-        report.extend(["Dependency Chains:", "-" * 17])
+        # PHART visualization - includes the graph and its legend
+        # Note: generate_dependency_ascii() returns a pre-formatted string
+        visualization = [self.generate_dependency_ascii(), ""]
+        
+        # Dependency chains section - shows topological ordering
+        chains = ["Dependency Chains:", "-" * 17]
         try:
             sorted_files = list(nx.topological_sort(self.dep_graph))
             for idx, file in enumerate(sorted_files):
                 deps = list(self.dep_graph.predecessors(file))
-                report.append(f"{idx+1}. {file.relative_to(self.src_dir)}")
+                chains.append(f"{idx+1}. {file.relative_to(self.src_dir)}")
                 if deps:
-                    report.append(f" Depends on: {', '.join(str(d.relative_to(self.src_dir)) for d in deps)}")
-            report.append("")
+                    chains.append(
+                        f" Depends on: {', '.join(str(d.relative_to(self.src_dir)) for d in deps)}"
+                    )
+            chains.append("")
         except nx.NetworkXUnfeasible:
-            report.extend([
+            chains.extend([
                 "Warning: Circular dependencies detected!",
                 "Cycles found:",
                 *[f"  {' -> '.join(str(p.relative_to(self.src_dir)) for p in cycle)}"
-                  for cycle in nx.simple_cycles(self.dep_graph)],
+                for cycle in nx.simple_cycles(self.dep_graph)],
                 ""
             ])
         
-        # Module details
-        report.extend(["Module Details:", "-" * 13])
+        # Module details section - detailed information about each module
+        details = ["Module Details:", "-" * 13]
         for path, module in self.modules.items():
-            report.extend([
+            details.extend([
                 f"\n{path.relative_to(self.src_dir)}:",
                 f"Classes: {', '.join(module.classes) if module.classes else 'None'}",
                 f"Functions: {', '.join(module.functions) if module.functions else 'None'}",
                 f"Imports: {', '.join(module.imports) if module.imports else 'None'}"
             ])
         
+        # Combine all sections in the desired order using extend()
+        # This preserves the proper formatting of each section
+        report = []
+        for section in [header, directory_structure, import_summary, statistics, 
+                    visualization, chains, details]:
+            report.extend(section)
+        
+        # Join all lines with newlines to create the final report
         return '\n'.join(report)
 
     def _get_header_content(self):
@@ -573,19 +615,17 @@ Summary Level: {self.summary_level.value}
         renderer = ASCIIRenderer(display_graph, options=options)
         ascii_art = f"""
 Directory Structure:
+--------------------
 {self._get_tree_output()}
    
 Module Dependencies:
+--------------------
+PHART Module Dependency Graph Visualization (see legend below):
 
+{renderer.render()}
 {legend}
 {"(non-dependent modules elided from visualization)" if self.elide_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
 
-PHART Graph Visualization:
-
-{renderer.render()}
-     
-Import Summary:
-{self._generate_import_summary()}
 """
         return ascii_art
 
