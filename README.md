@@ -1,40 +1,52 @@
-"""ChimeraCat: Intelligent code concatenator and summarizer for LLM analysis.
+# ChimeraCat: Intelligent code concatenator and summarizer for LLM analysis.
 
 Analyzes Python codebases to generate consolidated files optimized for LLM processing,
 with configurable summarization to reduce token usage while preserving key information.
 
-Key Features:
-    - Analyzes Python files for imports and definitions
-    - Builds dependency graphs using NetworkX
-    - Generates both .py files and Colab notebooks
-    - Smart handling of internal/external imports
-    - Configurable code summarization
+Now includes cli `ccat` with all configuration exposed as command-line arguments.
 
-Configuration Details:
-    src_dir: Source directory to analyze. Defaults to "./src" in cwd.
-    
-    summary_level: Controls summarization aggressiveness:
-        - NONE: Full code output
-        - INTERFACE: Preserve signatures/types/docstrings only
-        - CORE: Include core logic, skip standard patterns
-    
-    exclude_patterns: Files matching these patterns are skipped.
-        Note: ChimeraCat always excludes itself to avoid recursion.
-    
-    rules: Override default summarization rules with custom SummaryRules.
-        Useful for domain-specific boilerplate detection.
-    
-    remove_disconnected_deps: When True, omit modules with no dependencies
-        from visualization. Useful for cleaner dependency graphs.
-    
-    generate_report: Controls inclusion of dependency analysis.
-        Defaults to True for INTERFACE/CORE summaries.
-    
-    report_only: Generate only dependency report without code output.
-    
-    use_numeric: Use numbers instead of letters for node labels.
+## Key Features:
+- Analyzes Python files for imports and definitions
+- Builds dependency graphs using NetworkX
+- Generates both .py files and Colab notebooks
+- Smart handling of internal/external imports
+- Configurable code summarization
 
-Example:
+## General Dependency and Interface mapping
+
+If you aren't trying to save on token and conserve context memory when pairing with an LLM, you may still find ChimeraCat's reporting functionality useful.
+
+### CLI report generation example:
+```bash
+
+```
+
+## Configuration Details:
+- src_dir: Source directory to analyze. Defaults to "./src" in cwd.
+    
+- summary_level: Controls summarization aggressiveness:
+  - NONE: Full code output
+  - INTERFACE: Preserve signatures/types/docstrings only
+  - CORE: Include core logic, skip standard patterns
+    
+- exclude_patterns: Files matching these patterns are skipped.
+  - Note: ChimeraCat always excludes itself to avoid recursion.
+    
+- rules: Override default summarization rules with custom SummaryRules.
+  - Useful for domain-specific boilerplate detection.
+    
+- remove_disconnected_deps: When True, omit modules with no dependencies
+  from visualization.
+  - Useful for cleaner dependency graphs.
+    
+- generate_report: Controls inclusion of dependency analysis.
+  - Defaults to True for INTERFACE/CORE summaries.
+    
+- report_only: Generate only dependency report without code output.
+    
+- use_numeric: Use numbers instead of letters for node labels.
+
+## API Example:
     ```python
     # Generate both notebook and summarized Python file
     cat = ChimeraCat(
@@ -46,6 +58,8 @@ Example:
     notebook = cat.generate_colab_notebook()
     py_file = cat.generate_concat_file()
     ```
+
+Though for most cases, what you probably want is the CLI:
 
 ## CLI Usage
 ChimeraCat installs with a cli tool `ccat`. The configuration dictionary can be manipulated via command-line arguments.
