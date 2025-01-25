@@ -1,4 +1,4 @@
-# ChimeraCat: Intelligent code concatenator and summarizer for LLM analysis.
+# ChimeraCat: Intelligent code concatenator and summarizer
 
 Analyzes Python codebases to generate consolidated files optimized for LLM processing,
 with configurable summarization to reduce token usage while preserving key information.
