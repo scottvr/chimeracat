@@ -18,8 +18,12 @@ If you aren't trying to save on token and conserve context memory when pairing w
 
 ### CLI report generation example:
 ```bash
-ccat --report-only --remove-disconnected --numeric-labels ..\ASSET\stemprover\src > ccat-report.stemprover.txt
+ccat --report-only --elide-disconnected --numeric-labels ..\ASSET\stemprover\src > ccat-report.stemprover.txt
 ```
+<details>
+<summary>Example output from above command</summary>
+
+</details>
 
 ## Configuration Details:
 - src_dir: Source directory to analyze. Defaults to "./src" in cwd.
@@ -35,7 +39,7 @@ ccat --report-only --remove-disconnected --numeric-labels ..\ASSET\stemprover\sr
 - rules: Override default summarization rules with custom SummaryRules.
   - Useful for domain-specific boilerplate detection.
     
-- remove_disconnected_deps: When True, omit modules with no dependencies
+- elide_disconnected_deps: When True, omit modules with no dependencies
   from visualization.
   - Useful for cleaner dependency graphs.
     
@@ -53,7 +57,7 @@ ccat --report-only --remove-disconnected --numeric-labels ..\ASSET\stemprover\sr
         "src",
         summary_level=SummaryLevel.INTERFACE,
         exclude_patterns=["tests"],
-        remove_disconnected_deps=True
+        elide_disconnected_deps=True
     )
     notebook = cat.generate_colab_notebook()
     py_file = cat.generate_concat_file()
@@ -67,7 +71,7 @@ ChimeraCat installs with a cli tool `ccat`. The configuration dictionary can be 
 ```bash
 usage: ccat [-h] [-s {interface,core,none}] [-e EXCLUDE [EXCLUDE ...]] [-o OUTPUT]
             [-t {py,ipynb,both}] [-r] [--report-only] [--numeric-labels] [--no-report]       
-            [--remove-disconnected] [-d] [--debug-prefix DEBUG_PREFIX] [--version]
+            [--elide-disconnected] [-d] [--debug-prefix DEBUG_PREFIX] [--version]
             [src_dir]
 
     ChimeraCat (ccat) - The smart code concatenator
@@ -98,7 +102,7 @@ options:
   --numeric-labels      Use numbers instead of letters for node labels
   --no-report           Suppress dependency report generation even for interface/core        
                         summary levels
-  --remove-disconnected
+  --elide-disconnected
                         Remove modules with no dependencies from visualization
   -d, --debug           Enable debug output
   --debug-prefix DEBUG_PREFIX

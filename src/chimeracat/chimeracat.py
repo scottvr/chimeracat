@@ -787,7 +787,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        '--remove-disconnected',
+        '--elide-disconnected',
         action='store_true',
         help='Remove modules with no dependencies from visualization'
     )
