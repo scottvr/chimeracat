@@ -8,7 +8,7 @@ Args:
     summary_level (SummaryLevel): Summarization level (INTERFACE/CORE/NONE)
     exclude_patterns (List[str]): Patterns to exclude from processing
     rules (Optional[SummaryRules]): Custom summarization rules
-    remove_disconnected_deps (bool): Omit disconnected modules from visualization
+    elide_disconnected_deps (bool): Omit disconnected modules from visualization
     generate_report (Optional[bool]): Include dependency analysis report
     report_only (bool): Generate only the dependency report
     use_numeric (bool): Use numeric instead of alpha labels in visualizations
@@ -36,7 +36,7 @@ Configuration Details:
     rules: Override default summarization rules with custom SummaryRules.
         Useful for domain-specific boilerplate detection.
     
-    remove_disconnected_deps: When True, omit modules with no dependencies
+    elide_disconnected_deps: When True, omit modules with no dependencies
         from visualization. Useful for cleaner dependency graphs.
     
     generate_report: Controls inclusion of dependency analysis.
@@ -53,7 +53,7 @@ Example:
         "src",
         summary_level=SummaryLevel.INTERFACE,
         exclude_patterns=["tests"],
-        remove_disconnected_deps=True
+        elide_disconnected_deps=True
     )
     notebook = cat.generate_colab_notebook()
     py_file = cat.generate_concat_file()
@@ -143,7 +143,7 @@ class ChimeraCat:
              summary_level: SummaryLevel = SummaryLevel.NONE,
              exclude_patterns: List[str] = None,
              rules: Optional[SummaryRules] = None,
-             remove_disconnected_deps: bool = False,
+             elide_disconnected_deps: bool = False,
              generate_report: Optional[bool] = None,
              report_only: bool = False,
              use_numeric: bool = False,
@@ -160,7 +160,7 @@ class ChimeraCat:
         self.self_path = Path(__file__).resolve()
         self.exclude_patterns = exclude_patterns or []
         self.debug = debug
-        self.remove_disconnected_deps = remove_disconnected_deps
+        self.elide_disconnected_deps = elide_disconnected_deps
         self.debug_str = debug_str
 
         if generate_report is None:
@@ -552,7 +552,7 @@ Summary Level: {self.summary_level.value}
             dst_label = [k for k, v in label_mapping.items() if v == dst][0]
             display_graph.add_edge(src_label, dst_label)
         
-        if self.remove_disconnected_deps:
+        if self.elide_disconnected_deps:
             self._debug_print("removing disconnected imports (no dependent relationship)")
             self._debug_print(display_graph)
             display_graph.remove_nodes_from(list(nx.isolates(display_graph)))
@@ -578,7 +578,10 @@ Directory Structure:
 Module Dependencies:
 
 {legend}
-{"non-dependent modules elided from visualization" if self.remove_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
+{"(non-dependent modules elided from visualization)" if self.elide_disconnected_deps else "node names detached from the network and printed in isolation are non-connected/likely unused."}
+
+PHART Graph Visualization:
+
 {renderer.render()}
      
 Import Summary:
@@ -646,7 +649,7 @@ def process_cli_args(args: Optional[List[str]] = None) -> dict:
         'src_dir': parsed_args.src_dir,
         'summary_level': summary_level,
         'exclude_patterns': parsed_args.exclude,
-        'remove_disconnected_deps': parsed_args.remove_disconnected,
+        'elide_disconnected_deps': parsed_args.elide_disconnected,
         'generate_report': parsed_args.report,
         'report_only': parsed_args.report_only,
         'use_numeric': parsed_args.use_numeric,
@@ -682,7 +685,7 @@ def cli_main(args: Optional[List[str]] = None) -> int:
                 notebook_cat = ChimeraCat(
                     src_dir=config['src_dir'],
                     exclude_patterns=config['exclude_patterns'],
-                    remove_disconnected_deps=config['remove_disconnected_deps'],
+                    elide_disconnected_deps=config['elide_disconnected_deps'],
                     debug=config['debug'],
                     debug_str=config['debug_str'],
                     generate_report=config['generate_report'],
@@ -828,7 +831,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
 #            summary_level=level, 
 #            debug=debug, 
 #            debug_str="DBG: ", 
-#            remove_disconnected_deps=True,
+#            elide_disconnected_deps=True,
 #            generate_report=generate_report
 #        )
 #        output_file = cat.generate_concat_file(filename)
@@ -838,7 +841,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
 #    cat = ChimeraCat(
 #        "src", 
 #        exclude_patterns=["tools\\", ".ipynb", "cats\\"], 
-#        remove_disconnected_deps=True,
+#        elide_disconnected_deps=True,
 #    )
 #    output_file = cat.generate_colab_notebook("colab_ready.ipynb")
 #    print(f"Generated notebook version: {output_file}")
