@@ -77,40 +77,6 @@ Total dependencies: 19
 Module Dependencies:
 -------------------
 
-
-Directory Structure:
---------------------
-stemprover\__init__.py
-stemprover\analysis\base.py
-stemprover\analysis\spectral.py
-stemprover\analysis\artifacts\base.py
-stemprover\analysis\artifacts\high_freq.py
-stemprover\analysis\artifacts\preprocessor.py
-stemprover\analysis\selection\metrics.py
-stemprover\analysis\selection\segment_finder.py
-stemprover\analysis\selection\__init__.py
-stemprover\common\audio_utils.py
-stemprover\common\math_utils.py
-stemprover\common\spectral_utils.py
-stemprover\common\types.py
-stemprover\common\__init__.py
-stemprover\core\audio.py
-stemprover\core\config.py
-stemprover\core\types.py
-stemprover\enhancement\base.py
-stemprover\enhancement\controlnet.py
-stemprover\enhancement\training.py
-stemprover\io\audio.py
-stemprover\preparation\base.py
-stemprover\preparation\segments\generator.py
-stemprover\preparation\segments\__init__.py
-stemprover\separation\base.py
-stemprover\separation\spleeter.py
-stemprover\training\dataset.py
-stemprover\training\pairs.py
-   
-Module Dependencies:
---------------------
 PHART Module Dependency Graph Visualization (see legend below):
 
             [1]    [23]    [25]    [7]    [8]    [9]
