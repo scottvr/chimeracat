@@ -728,6 +728,7 @@ def cli_main(args: Optional[List[str]] = None) -> int:
 
 def create_cli_parser() -> argparse.ArgumentParser:
     """Create the command-line argument parser for ChimeraCat"""
+    from . import __version__
     parser = argparse.ArgumentParser(
         prog='ccat',
         description="""
@@ -822,7 +823,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--version',
         action='version',
-        version=f'%(prog)s {chimeracat.__version__}'
+        version=f'%(prog)s {__version__}'
     )
 
     return parser
